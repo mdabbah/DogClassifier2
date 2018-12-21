@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                tools:showIn="@layout/activity_camera"
+                tools:context=".CameraActivity">
+
+    <Button
+            android:text="Capture"
+            android:layout_width="377dp"
+            android:layout_height="67dp" tools:layout_editor_absoluteY="498dp"
+            tools:layout_editor_absoluteX="3dp"
+            android:id="@+id/capture_button" android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true" android:layout_marginBottom="0dp" android:layout_marginStart="0dp"/>
+    <TextureView
+            android:id="@+id/texture"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/capture_button"
+            android:layout_alignParentTop="true"
+            tools:layout_editor_absoluteX="3dp"
+            android:layout_alignParentStart="true" android:layout_marginTop="0dp" android:layout_marginBottom="0dp"
+            android:layout_marginStart="0dp"/>
+
+    <TextView
+            android:text="predictions"
+            android:layout_width="match_parent"
+            android:layout_height="71dp" tools:layout_editor_absoluteY="5dp"
+            tools:layout_editor_absoluteX="3dp"
+            android:id="@+id/predictions_textView" android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true" android:layout_marginStart="0dp"
+            android:layout_marginBottom="496dp" tools:text="predictions "
+            android:background="@color/design_default_color_primary"/>
+</RelativeLayout>
