@@ -9,7 +9,7 @@ android {
     defaultConfig {
         applicationId "com.example.mdabb.dogclassifier"
         minSdkVersion 23
-        targetSdkVersion 28
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -25,13 +25,30 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    aaptOptions {
+        noCompress "tflite"
+    }
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"
         }
+
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
-
+repositories {
+    maven {
+        url 'https://google.bintray.com/tensorflow'
+    }
+}
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
@@ -39,6 +56,8 @@ dependencies {
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
     implementation 'com.android.support:design:28.0.0'
     testImplementation 'junit:junit:4.12'
+    implementation 'org.tensorflow:tensorflow-lite:0.0.0-nightly'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
+def targetFolder = "src/main/assets"

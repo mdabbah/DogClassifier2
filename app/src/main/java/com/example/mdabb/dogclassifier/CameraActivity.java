@@ -3,6 +3,7 @@ package com.example.mdabb.dogclassifier;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.*;
@@ -16,6 +17,7 @@ import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.SpannableStringBuilder;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -62,6 +64,7 @@ public class CameraActivity extends AppCompatActivity {
     private Handler mImageProcessHandler;
     private HandlerThread mBackgroundThread;
     private HandlerThread mImageProcessThread;
+    private ImageClassifier classifier;
     ImageReader img_reader;
     int frame = 0;
 
@@ -93,6 +96,15 @@ public class CameraActivity extends AppCompatActivity {
 
         predictions_tv = findViewById(R.id.predictions_textView);
         assert predictions_tv != null;
+        // Try to load model.
+        try {
+                classifier = new ImageClassifierFloat(this);
+
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to load", e);
+            classifier = null;
+        }
+        if(classifier!=null) classifier.setNumThreads(1);
 
     }
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener(){
@@ -240,8 +252,9 @@ public class CameraActivity extends AppCompatActivity {
                     int b = textureView.getBitmap().getPixel(5,8);
                     int h = textureView.getBitmap().getHeight();
                     int w = textureView.getBitmap().getWidth();
+                    String s = classifyFrame();
                     predictions_tv.setText("frame " +frame + " pix "+ b + "\n" +
-                                            " hight " + h+ " width "+w);
+                                            " hight " + h+ " width "+w +"\n"+s);
                     frame++;
                 }
             }, mBackgroundHandler);
@@ -250,7 +263,19 @@ public class CameraActivity extends AppCompatActivity {
         }
 
     }
-
+    private String classifyFrame() {
+        if (classifier == null || this == null || cameraDevice == null) {
+            // It's important to not call showToast every frame, or else the app will starve and
+            // hang. updateActiveModel() already puts a error message up with showToast.
+            // showToast("Uninitialized Classifier or invalid context.");
+            return null;
+        }
+        SpannableStringBuilder textToShow = new SpannableStringBuilder();
+        Bitmap bitmap = textureView.getBitmap(classifier.getImageSizeX(), classifier.getImageSizeY());
+        classifier.classifyFrame(bitmap, textToShow);
+        bitmap.recycle();
+        return textToShow.toString();
+    }
     private void closeCamera() {
         if (null != cameraDevice) {
             cameraDevice.close();

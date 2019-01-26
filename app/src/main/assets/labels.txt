@@ -1,0 +1,120 @@
+Toy Poodle
+Samoyed
+Redbone
+Shih-tzu
+West highland white terrier
+Schipperke
+Bluetick
+Standard schnauzer
+Groenendael
+Italian greyhound
+Brabancon griffon
+English setter
+Airedale
+Rhodesian ridgeback
+Miniature schnauzer
+Blenheim spaniel
+Collie
+Tibetan terrier
+Chesapeake bay retriever
+Welsh springer spaniel
+Afghan hound
+Whippet
+Affenpinscher
+Kerry blue terrier
+Dhole
+Bernese mountain dog
+Entlebucher
+Boston bull
+Great pyrenees
+Kelpie
+Ibizan hound
+Miniature poodle
+Black-and-tan coonhound
+Eskimo dog
+Old english sheepdog
+Australian terrier
+Curly-coated retriever
+English foxhound
+Weimaraner
+Norfolk terrier
+Irish water spaniel
+Silky terrier
+Boxer
+Brittany spaniel
+Bull mastiff
+Chihuahua
+Basset
+Sealyham terrier
+French bulldog
+Chow
+Cairn
+Toy terrier
+Basenji
+Malamute
+Appenzeller
+Golden retriever
+Briard
+Walker hound
+Saluki
+Irish terrier
+Komondor
+Cardigan
+Labrador retriever
+Doberman
+English springer
+Saint bernard
+Shetland sheepdog
+Ctterhound
+Irish wolfhound
+Soft-coated wheaten terrier
+Staffordshire bullterrier
+Border terrier
+Pembroke
+Bloodhound
+Vizsla
+Norwegian elkhound
+Rottweiler
+Cocker spaniel
+Scottish deerhound
+Great dane
+Keeshond
+Irish setter
+Kuvasz
+Border collie
+Bedlington terrier
+Pug
+Yorkshire terrier
+Lhasa
+African hunting dog
+Miniature pinscher
+Flat-coated retriever
+Lakeland terrier
+Giant schnauzer
+Mexican hairless
+Wire-haired fox terrier
+Clumber
+Gordon setter
+German short-haired pointer
+Standard poodle
+Papillon
+Japanese spaniel
+Dingo
+Leonberg
+Scotch terrier
+Tibetan mastiff
+Beagle
+Malinois
+Pekinese
+Greater swiss mountain dog
+Sussex spaniel
+Bouvier des flandres
+Maltese dog
+Newfoundland
+Borzoi
+Dandie dinmont
+German shepherd
+American staffordshire terrier
+Pomeranian
+Siberian husky
+Norwich terrier
