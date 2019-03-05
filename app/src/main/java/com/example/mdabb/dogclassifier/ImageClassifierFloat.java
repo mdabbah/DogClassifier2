@@ -43,14 +43,14 @@ public class ImageClassifierFloat extends ImageClassifier {
    *
    * @param activity
    */
-  ImageClassifierFloat(Activity activity) throws IOException {
-    super(activity);
+  ImageClassifierFloat(Activity activity, String Model) throws IOException {
+    super(activity,Model);
     labelProbArray = new float[1][getNumLabels()];
   }
 
   @Override
   protected String getModelPath() {
-    return "trained_resnet.tflite";
+    return model_name+".tflite";
   }
 
   @Override

@@ -11,7 +11,6 @@
             android:layout_height="wrap_content"
             android:layout_width="match_parent"
             android:theme="@style/AppTheme.AppBarOverlay">
-
         <android.support.v7.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
@@ -25,7 +24,7 @@
             android:id="@+id/my_recycler_view"
             android:scrollbars="vertical"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent" tools:itemCount="0"/>
 
     <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab"
@@ -34,5 +33,92 @@
             android:layout_gravity="bottom|end"
             android:layout_margin="@dimen/fab_margin"
             app:srcCompat="@android:drawable/ic_menu_camera"/>
+    <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:id="@+id/radioModel"
+            android:layout_marginTop="100dp">
+        <TextView
+                android:id="@+id/tv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Select Model:"
+                android:textSize="@dimen/fab_margin"
+                android:textStyle="bold"
+        />
+        <RadioButton
+                android:id="@+id/radio_one"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="inception12"
+                android:onClick="checkButton"
+                android:layout_gravity="center"
+                android:checked="true"/>
+        <RadioButton
+                android:id="@+id/radio_two"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="resnet5036"
+                android:onClick="checkButton"
+                android:layout_gravity="center"
+                android:checked="false"/>
+        <RadioButton
+                android:id="@+id/radio_three"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="resnet_v221"
+                android:onClick="checkButton"
+                android:layout_gravity="center"
+                android:checked="false"/>
+        <RadioButton
+                android:id="@+id/radio_four"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="mobilenet"
+                android:onClick="checkButton"
+                android:layout_gravity="center"
+                android:checked="false"/>
+        <RadioButton
+                android:id="@+id/radio_five"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="xception23"
+                android:onClick="checkButton"
+                android:layout_gravity="center"
+                android:checked="false"/>
+    </RadioGroup>
+    <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:id="@+id/radioProc"
+            android:layout_marginTop="80dp"
+            android:layout_gravity="center">
+    <TextView
+            android:id="@+id/tvProc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select Processor:"
+            android:textSize="@dimen/fab_margin"
+            android:textStyle="bold"
+    />
+    <RadioButton
+            android:id="@+id/radio_one_Proc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CPU"
+            android:onClick="checkButton"
+            android:layout_gravity="center"
+            android:checked="true"/>
+    <RadioButton
+            android:id="@+id/radio_two_Proc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GPU"
+            android:onClick="checkButton"
+            android:layout_gravity="center"
+            android:checked="false"/>
+    </RadioGroup>
 
 </android.support.design.widget.CoordinatorLayout>

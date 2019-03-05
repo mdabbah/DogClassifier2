@@ -2,6 +2,7 @@ package com.example.mdabb.dogclassifier;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
@@ -10,10 +11,7 @@ import android.hardware.camera2.*;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.HandlerThread;
+import android.os.*;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -39,7 +37,8 @@ public class CameraActivity extends AppCompatActivity {
     private static final String TAG = "AndroidCameraApi";
     private Button takePictureButton;
     private TextureView textureView;
-
+    private final Object lock = new Object();
+    private boolean runClassifier = false;
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
     static {
@@ -80,9 +79,9 @@ public class CameraActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
-
         textureView = (TextureView) findViewById(R.id.texture);
         assert textureView != null;
+        textureView.setKeepScreenOn(true);
         textureView.setSurfaceTextureListener(textureListener);
         takePictureButton = (Button) findViewById(R.id.capture_button);
         assert takePictureButton != null;
@@ -97,15 +96,21 @@ public class CameraActivity extends AppCompatActivity {
         predictions_tv = findViewById(R.id.predictions_textView);
         assert predictions_tv != null;
         // Try to load model.
+        String model = getIntent().getStringExtra(MainActivity.MODEL);
+        boolean useGpu = getIntent().getBooleanExtra(MainActivity.USEGPU, false);
         try {
-                classifier = new ImageClassifierFloat(this);
+            classifier = new ImageClassifierFloat(this, model);
 
         } catch (IOException e) {
             Log.e(TAG, "Failed to load", e);
             classifier = null;
         }
-        if(classifier!=null) classifier.setNumThreads(1);
-
+        if (GpuDelegateHelper.isGpuDelegateAvailable() && useGpu) {
+            classifier.useGpu();
+        }
+        if (classifier != null) {
+            classifier.setNumThreads(Runtime.getRuntime().availableProcessors());
+        }
     }
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener(){
 
@@ -182,7 +187,9 @@ public class CameraActivity extends AppCompatActivity {
         mImageProcessThread = new HandlerThread("image process Background");
         mImageProcessThread.start();
         mImageProcessHandler = new Handler(mImageProcessThread.getLooper());
-
+        synchronized (lock) {
+            runClassifier = true;
+        }
         // update preview thread
         mBackgroundThread = new HandlerThread("Camera Background");
         mBackgroundThread.start();
@@ -190,17 +197,27 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     protected void stopBackgroundThreads() {
-        mBackgroundThread.quitSafely();
-        mImageProcessThread.quitSafely();
+        if(mBackgroundThread!=null){
+            mBackgroundThread.quitSafely();
+        }
+        if(mImageProcessThread!=null) {
+            mImageProcessThread.quitSafely();
+        }
         try {
-            mBackgroundThread.join();
-            mImageProcessThread.join();
+            if(mBackgroundThread!=null) {
+                mBackgroundThread.join();
+                mBackgroundThread = null;
+                mBackgroundHandler = null;
 
-            mImageProcessThread = null;
-            mImageProcessHandler = null;
-
-            mBackgroundThread = null;
-            mBackgroundHandler = null;
+            }
+            if(mImageProcessThread!=null) {
+                mImageProcessThread.join();
+                mImageProcessThread = null;
+                mImageProcessHandler = null;
+            }
+            synchronized (lock) {
+                runClassifier = false;
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -249,12 +266,18 @@ public class CameraActivity extends AppCompatActivity {
                 @Override
                 public void onCaptureCompleted( CameraCaptureSession session,  CaptureRequest request, TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    int b = textureView.getBitmap().getPixel(5,8);
-                    int h = textureView.getBitmap().getHeight();
-                    int w = textureView.getBitmap().getWidth();
-                    String s = classifyFrame();
-                    predictions_tv.setText("frame " +frame + " pix "+ b + "\n" +
-                                            " hight " + h+ " width "+w +"\n"+s);
+                    long startTime=0,endTime=0;
+                    String s="Waiting";
+                    synchronized (lock) {
+                        if (runClassifier) {
+                            startTime = SystemClock.uptimeMillis();
+                            s = classifyFrame();
+                            endTime = SystemClock.uptimeMillis();
+                        }
+                    }
+
+                    predictions_tv.setText("frame " +frame + " delay "
+                            +Long.toString(endTime - startTime)+ " ms" +"\n" +s);
                     frame++;
                 }
             }, mBackgroundHandler);
@@ -319,7 +342,25 @@ public class CameraActivity extends AppCompatActivity {
         stopBackgroundThreads();
         super.onPause();
     }
-
+    @Override
+    public void onBackPressed(){
+        synchronized (lock) {
+            runClassifier = false;
+        }
+        super.onBackPressed();
+        this.finish();
+    }
+  @Override
+  public void onDestroy() {
+      stopBackgroundThreads();
+      if (classifier != null) {
+          classifier.close();
+      }
+      if (cameraDevice != null) {
+          cameraDevice.close();
+      }
+      super.onDestroy();
+  }
 
     protected ImageReader createImageReader(){
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);

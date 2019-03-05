@@ -46,6 +46,7 @@ import org.tensorflow.lite.Interpreter;
  * Classifies images with Tensorflow Lite.
  */
 public abstract class ImageClassifier {
+  public String model_name;
   // Display preferences
   private static final float GOOD_PROB_THRESHOLD = 0.1f;
   private static final int SMALL_COLOR = 0xffddaa88;
@@ -99,7 +100,8 @@ public abstract class ImageClassifier {
   Delegate gpuDelegate = null;
 
   /** Initializes an {@code ImageClassifier}. */
-  ImageClassifier(Activity activity) throws IOException {
+  ImageClassifier(Activity activity, String model) throws IOException {
+    model_name=model;
     tfliteModel = loadModelFile(activity);
     tflite = new Interpreter(tfliteModel, tfliteOptions);
     labelList = loadLabelList(activity);
