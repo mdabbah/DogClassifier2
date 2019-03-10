@@ -64,6 +64,7 @@ public class CameraActivity extends AppCompatActivity {
     private HandlerThread mBackgroundThread;
     private HandlerThread mImageProcessThread;
     private ImageClassifier classifier;
+    private boolean buttonState=false;
     ImageReader img_reader;
     int frame = 0;
 
@@ -82,19 +83,6 @@ public class CameraActivity extends AppCompatActivity {
         textureView = (TextureView) findViewById(R.id.texture);
         assert textureView != null;
         textureView.setKeepScreenOn(true);
-        textureView.setSurfaceTextureListener(textureListener);
-        takePictureButton = (Button) findViewById(R.id.capture_button);
-        assert takePictureButton != null;
-        takePictureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //takePicture();
-            }
-        });
-        img_reader = ImageReader.newInstance(640, 480, ImageFormat.JPEG, 1);
-
-        predictions_tv = findViewById(R.id.predictions_textView);
-        assert predictions_tv != null;
         // Try to load model.
         String model = getIntent().getStringExtra(MainActivity.MODEL);
         boolean useGpu = getIntent().getBooleanExtra(MainActivity.USEGPU, false);
@@ -105,12 +93,40 @@ public class CameraActivity extends AppCompatActivity {
             Log.e(TAG, "Failed to load", e);
             classifier = null;
         }
-        if (GpuDelegateHelper.isGpuDelegateAvailable() && useGpu) {
-            classifier.useGpu();
-        }
+
+
         if (classifier != null) {
             classifier.setNumThreads(Runtime.getRuntime().availableProcessors());
+            if (GpuDelegateHelper.isGpuDelegateAvailable() && useGpu) {
+                classifier.useGpu();
+            }
         }
+        textureView.setSurfaceTextureListener(textureListener);
+        takePictureButton = (Button) findViewById(R.id.capture_button);
+        assert takePictureButton != null;
+        takePictureButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(buttonState==false){
+
+
+                        stopBackgroundThreads();
+                        buttonState=true;
+                        ((Button)v).setText("Resume");
+
+                }else{
+                    startBackgroundThreads();
+                    buttonState=false;
+                    ((Button)v).setText("Pause");
+
+                }
+            }
+        });
+        img_reader = ImageReader.newInstance(640, 480, ImageFormat.JPEG, 1);
+
+        predictions_tv = (TextView)findViewById(R.id.predictions_textView);
+        assert predictions_tv != null;
+
     }
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener(){
 
@@ -300,13 +316,18 @@ public class CameraActivity extends AppCompatActivity {
         return textToShow.toString();
     }
     private void closeCamera() {
-        if (null != cameraDevice) {
-            cameraDevice.close();
-            cameraDevice = null;
-        }
-        if (null != imageReader) {
-            imageReader.close();
-            imageReader = null;
+        try {
+            cameraCaptureSessions.abortCaptures();
+            if (null != cameraDevice) {
+                cameraDevice.close();
+                cameraDevice = null;
+            }
+            if (null != imageReader) {
+                imageReader.close();
+                imageReader = null;
+            }
+        }catch (CameraAccessException e){
+            throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
         }
     }
 
@@ -338,12 +359,13 @@ public class CameraActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         Log.e(TAG, "onPause");
-        //closeCamera();
+        closeCamera();
         stopBackgroundThreads();
         super.onPause();
     }
     @Override
     public void onBackPressed(){
+        Log.e(TAG, "onBackPressed");
         synchronized (lock) {
             runClassifier = false;
         }
@@ -384,98 +406,7 @@ public class CameraActivity extends AppCompatActivity {
 
         return  reader;
     }
-    protected void takePicture() {
-        if (null == cameraDevice) {
-            Log.e(TAG, "cameraDevice is null");
-            return;
-        }
-        cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraDevice.getId());
-            Size[] jpegSizes = null;
-            if (characteristics != null) {
-                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
-            }
-            int width = 640;
-            int height = 480;
-            if (jpegSizes != null && 0 < jpegSizes.length) {
-                width = jpegSizes[0].getWidth();
-                height = jpegSizes[0].getHeight();
-            }
 
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
-            List<Surface> outputSurfaces = new ArrayList<Surface>(2);
-            outputSurfaces.add(reader.getSurface());
-            outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
-
-            final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-            captureBuilder.addTarget(reader.getSurface());
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-
-            // Orientation
-            int rotation = getWindowManager().getDefaultDisplay().getRotation();
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            final File file = new File(Environment.getExternalStorageDirectory() + "/pic.jpg");
-            ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
-                @Override
-                public void onImageAvailable(ImageReader reader) {
-                    Image image = null;
-                    try {
-                        image = reader.acquireLatestImage();
-                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                        byte[] bytes = new byte[buffer.capacity()];
-                        buffer.get(bytes);
-                        save(bytes);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (image != null) {
-                            image.close();
-                        }
-                    }
-                }
-
-                private void save(byte[] bytes) throws IOException {
-                    OutputStream output = null;
-                    try {
-                        output = new FileOutputStream(file);
-                        output.write(bytes);
-                    } finally {
-                        if (null != output) {
-                            output.close();
-                        }
-                    }
-                }
-            };
-            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
-            final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
-                @Override
-                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
-                    super.onCaptureCompleted(session, request, result);
-                    Toast.makeText(CameraActivity.this, "Saved:" + file, Toast.LENGTH_SHORT).show();
-                    createCameraPreview();
-                }
-            };
-            cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(CameraCaptureSession session) {
-                    try {
-                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onConfigureFailed(CameraCaptureSession session) {
-                }
-            }, mBackgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
 
 
 

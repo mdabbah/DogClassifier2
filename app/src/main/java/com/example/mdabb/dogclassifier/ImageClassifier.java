@@ -84,7 +84,7 @@ public abstract class ImageClassifier {
   private float[][] filterLabelProbArray = null;
 
   private static final int FILTER_STAGES = 3;
-  private static final float FILTER_FACTOR = 0.4f;
+  private static final float FILTER_FACTOR = 0.7f;
 
   private PriorityQueue<Map.Entry<String, Float>> sortedLabels =
       new PriorityQueue<>(
@@ -282,13 +282,11 @@ public abstract class ImageClassifier {
    *
    * @return
    */
-  protected abstract String getModelPath();
+  private String getModelPath(){
+    return model_name+".tflite";
+  }
 
-  /**
-   * Get the name of the label file stored in Assets.
-   *
-   * @return
-   */
+
   protected abstract String getLabelPath();
 
   /**

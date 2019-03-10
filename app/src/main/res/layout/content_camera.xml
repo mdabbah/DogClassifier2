@@ -8,12 +8,13 @@
                 tools:context=".CameraActivity">
 
     <Button
-            android:text="Capture"
-            android:layout_width="377dp"
+            android:text="Pause"
+            android:layout_width="fill_parent"
             android:layout_height="67dp" tools:layout_editor_absoluteY="498dp"
             tools:layout_editor_absoluteX="3dp"
             android:id="@+id/capture_button" android:layout_alignParentStart="true"
-            android:layout_alignParentBottom="true" android:layout_marginBottom="0dp" android:layout_marginStart="0dp"/>
+            android:layout_alignParentBottom="true" android:layout_marginBottom="0dp" android:layout_marginStart="0dp"
+            android:background="@color/colorPrimary"/>
     <TextureView
             android:id="@+id/texture"
             android:layout_width="match_parent"
@@ -25,7 +26,7 @@
             android:layout_marginStart="0dp"/>
 
     <TextView
-            android:text="predictions"
+            android:text="Predictions"
             android:textStyle="bold"
             android:layout_width="match_parent"
             android:layout_height="71dp" tools:layout_editor_absoluteY="5dp"

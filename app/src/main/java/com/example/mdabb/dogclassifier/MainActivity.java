@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         //get selected Proc
         radioGroup=(RadioGroup) findViewById(R.id.radioProc);
         radioButton=(RadioButton) findViewById(radioGroup.getCheckedRadioButtonId());
-        Boolean useGpu=(radioButton.getText().toString()=="GPU");
+        Boolean useGpu=(radioButton.getText().toString().equals("GPU"));
         //start activity
         intent.putExtra(MODEL,model);
         intent.putExtra(USEGPU,useGpu);

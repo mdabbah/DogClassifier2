@@ -49,11 +49,6 @@ public class ImageClassifierFloat extends ImageClassifier {
   }
 
   @Override
-  protected String getModelPath() {
-    return model_name+".tflite";
-  }
-
-  @Override
   protected String getLabelPath() {
     return "labels.txt";
   }
