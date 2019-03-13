@@ -2,14 +2,12 @@ package com.example.mdabb.dogclassifier;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.*;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.Image;
 import android.media.ImageReader;
 import android.os.*;
 import android.support.annotation.NonNull;
@@ -27,15 +25,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class CameraActivity extends AppCompatActivity {
 
     private static final String TAG = "AndroidCameraApi";
-    private Button takePictureButton;
     private TextureView textureView;
     private final Object lock = new Object();
     private boolean runClassifier = false;
@@ -47,26 +41,22 @@ public class CameraActivity extends AppCompatActivity {
         ORIENTATIONS.append(Surface.ROTATION_180, 270);
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
-    private String cameraId;
+
     protected TextView predictions_tv;
     protected CameraDevice cameraDevice;
     protected CameraCaptureSession cameraCaptureSessions;
-    protected CaptureRequest captureRequest;
     protected CaptureRequest.Builder captureRequestBuilder;
     protected CameraManager cameraManager;
     private Size imageDimension;
     private ImageReader imageReader;
-    private File file;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
-    private boolean mFlashSupported;
     private Handler mBackgroundHandler;
-    private Handler mImageProcessHandler;
     private HandlerThread mBackgroundThread;
-    private HandlerThread mImageProcessThread;
     private ImageClassifier classifier;
-    private boolean buttonState=false;
+    private boolean buttonState = false;
+    private long avgLat=0;
     ImageReader img_reader;
-    int frame = 0;
+    int frame = 1;
 
     private ImageReader.OnImageAvailableListener processImage = new ImageReader.OnImageAvailableListener() {
         @Override
@@ -85,7 +75,6 @@ public class CameraActivity extends AppCompatActivity {
         textureView.setKeepScreenOn(true);
         // Try to load model.
         String model = getIntent().getStringExtra(MainActivity.MODEL);
-        boolean useGpu = getIntent().getBooleanExtra(MainActivity.USEGPU, false);
         try {
             classifier = new ImageClassifierFloat(this, model);
 
@@ -93,42 +82,35 @@ public class CameraActivity extends AppCompatActivity {
             Log.e(TAG, "Failed to load", e);
             classifier = null;
         }
-
-
         if (classifier != null) {
             classifier.setNumThreads(Runtime.getRuntime().availableProcessors());
-            if (GpuDelegateHelper.isGpuDelegateAvailable() && useGpu) {
-                classifier.useGpu();
-            }
         }
         textureView.setSurfaceTextureListener(textureListener);
-        takePictureButton = (Button) findViewById(R.id.capture_button);
+        Button takePictureButton = (Button) findViewById(R.id.capture_button);
         assert takePictureButton != null;
         takePictureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(buttonState==false){
 
-
-                        stopBackgroundThreads();
-                        buttonState=true;
-                        ((Button)v).setText("Resume");
-
-                }else{
-                    startBackgroundThreads();
-                    buttonState=false;
-                    ((Button)v).setText("Pause");
+                if (buttonState == false) {
+                    closeCamera();
+                    buttonState = true;
+                    ((Button) v).setText("Resume");
+                } else {
+                    openCamera();
+                    buttonState = false;
+                    ((Button) v).setText("Pause");
 
                 }
             }
         });
         img_reader = ImageReader.newInstance(640, 480, ImageFormat.JPEG, 1);
-
-        predictions_tv = (TextView)findViewById(R.id.predictions_textView);
+        predictions_tv = (TextView) findViewById(R.id.predictions_textView);
         assert predictions_tv != null;
 
     }
-    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener(){
+
+    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
 
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
@@ -178,7 +160,7 @@ public class CameraActivity extends AppCompatActivity {
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         Log.e(TAG, "is camera open");
         try {
-            cameraId = manager.getCameraIdList()[0];
+            String cameraId = manager.getCameraIdList()[0];
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
@@ -187,7 +169,7 @@ public class CameraActivity extends AppCompatActivity {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
                     && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 
-                ActivityCompat.requestPermissions( CameraActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
+                ActivityCompat.requestPermissions(CameraActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
                 return;
             }
 
@@ -199,10 +181,6 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     protected void startBackgroundThreads() {
-        // image processing thread
-        mImageProcessThread = new HandlerThread("image process Background");
-        mImageProcessThread.start();
-        mImageProcessHandler = new Handler(mImageProcessThread.getLooper());
         synchronized (lock) {
             runClassifier = true;
         }
@@ -213,23 +191,14 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     protected void stopBackgroundThreads() {
-        if(mBackgroundThread!=null){
+        if (mBackgroundThread != null) {
             mBackgroundThread.quitSafely();
         }
-        if(mImageProcessThread!=null) {
-            mImageProcessThread.quitSafely();
-        }
         try {
-            if(mBackgroundThread!=null) {
+            if (mBackgroundThread != null) {
                 mBackgroundThread.join();
                 mBackgroundThread = null;
                 mBackgroundHandler = null;
-
-            }
-            if(mImageProcessThread!=null) {
-                mImageProcessThread.join();
-                mImageProcessThread = null;
-                mImageProcessHandler = null;
             }
             synchronized (lock) {
                 runClassifier = false;
@@ -280,10 +249,11 @@ public class CameraActivity extends AppCompatActivity {
         try {
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
                 @Override
-                public void onCaptureCompleted( CameraCaptureSession session,  CaptureRequest request, TotalCaptureResult result) {
+                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    long startTime=0,endTime=0;
-                    String s="Waiting";
+                    long startTime = 0, endTime = 0;
+                    String s = "Waiting";
+
                     synchronized (lock) {
                         if (runClassifier) {
                             startTime = SystemClock.uptimeMillis();
@@ -291,10 +261,12 @@ public class CameraActivity extends AppCompatActivity {
                             endTime = SystemClock.uptimeMillis();
                         }
                     }
-
-                    predictions_tv.setText("frame " +frame + " delay "
-                            +Long.toString(endTime - startTime)+ " ms" +"\n" +s);
-                    frame++;
+                    if (buttonState == false) {
+                        avgLat=(avgLat*(frame-1)+(endTime - startTime))/frame;
+                        predictions_tv.setText("frame " + frame + " Avg. delay "
+                                + Long.toString(avgLat) + " ms" + "\n" + s);
+                        frame++;
+                    }
                 }
             }, mBackgroundHandler);
         } catch (CameraAccessException e) {
@@ -302,6 +274,7 @@ public class CameraActivity extends AppCompatActivity {
         }
 
     }
+
     private String classifyFrame() {
         if (classifier == null || this == null || cameraDevice == null) {
             // It's important to not call showToast every frame, or else the app will starve and
@@ -315,6 +288,7 @@ public class CameraActivity extends AppCompatActivity {
         bitmap.recycle();
         return textToShow.toString();
     }
+
     private void closeCamera() {
         try {
             cameraCaptureSessions.abortCaptures();
@@ -326,7 +300,7 @@ public class CameraActivity extends AppCompatActivity {
                 imageReader.close();
                 imageReader = null;
             }
-        }catch (CameraAccessException e){
+        } catch (CameraAccessException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
         }
     }
@@ -341,7 +315,6 @@ public class CameraActivity extends AppCompatActivity {
             }
         }
     }
-
 
 
     @Override
@@ -363,8 +336,9 @@ public class CameraActivity extends AppCompatActivity {
         stopBackgroundThreads();
         super.onPause();
     }
+
     @Override
-    public void onBackPressed(){
+    public void onBackPressed() {
         Log.e(TAG, "onBackPressed");
         synchronized (lock) {
             runClassifier = false;
@@ -372,19 +346,20 @@ public class CameraActivity extends AppCompatActivity {
         super.onBackPressed();
         this.finish();
     }
-  @Override
-  public void onDestroy() {
-      stopBackgroundThreads();
-      if (classifier != null) {
-          classifier.close();
-      }
-      if (cameraDevice != null) {
-          cameraDevice.close();
-      }
-      super.onDestroy();
-  }
 
-    protected ImageReader createImageReader(){
+    @Override
+    public void onDestroy() {
+        stopBackgroundThreads();
+        if (classifier != null) {
+            classifier.close();
+        }
+        if (cameraDevice != null) {
+            cameraDevice.close();
+        }
+        super.onDestroy();
+    }
+
+    protected ImageReader createImageReader() {
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         ImageReader reader = null;
         try {
@@ -399,15 +374,13 @@ public class CameraActivity extends AppCompatActivity {
                 width = jpegSizes[0].getWidth();
                 height = jpegSizes[0].getHeight();
             }
-             reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
-        }catch (CameraAccessException e){
+            reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+        } catch (CameraAccessException e) {
 //            Log.d("couldn't create an image reader");
         }
 
-        return  reader;
+        return reader;
     }
-
-
 
 
 }

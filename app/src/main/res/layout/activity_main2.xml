@@ -88,37 +88,6 @@
                 android:layout_gravity="center"
                 android:checked="false"/>
     </RadioGroup>
-    <RadioGroup
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:id="@+id/radioProc"
-            android:layout_marginTop="80dp"
-            android:layout_gravity="center">
-    <TextView
-            android:id="@+id/tvProc"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Select Processor:"
-            android:textSize="@dimen/fab_margin"
-            android:textStyle="bold"
-    />
-    <RadioButton
-            android:id="@+id/radio_one_Proc"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="CPU"
-            android:onClick="checkButton"
-            android:layout_gravity="center"
-            android:checked="true"/>
-    <RadioButton
-            android:id="@+id/radio_two_Proc"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="GPU"
-            android:onClick="checkButton"
-            android:layout_gravity="center"
-            android:checked="false"/>
-    </RadioGroup>
+
 
 </android.support.design.widget.CoordinatorLayout>

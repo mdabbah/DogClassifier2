@@ -16,6 +16,7 @@ limitations under the License.
 package com.example.mdabb.dogclassifier;
 
 import android.app.Activity;
+
 import com.example.mdabb.dogclassifier.ImageClassifier;
 
 import java.io.IOException;
@@ -26,74 +27,74 @@ import java.io.IOException;
  */
 public class ImageClassifierFloat extends ImageClassifier {
 
-  /**
-   * The inception net requires additional normalization of the used input.
-   */
-  private static final int IMAGE_MEAN = 128;
-  private static final float IMAGE_STD = 128.0f;
+    /**
+     * The inception net requires additional normalization of the used input.
+     */
+    private static final int IMAGE_MEAN = 128;
+    private static final float IMAGE_STD = 128.0f;
 
-  /**
-   * An array to hold inference results, to be feed into Tensorflow Lite as outputs.
-   * This isn't part of the super class, because we need a primitive array here.
-   */
-  private float[][] labelProbArray = null;
+    /**
+     * An array to hold inference results, to be feed into Tensorflow Lite as outputs.
+     * This isn't part of the super class, because we need a primitive array here.
+     */
+    private float[][] labelProbArray = null;
 
-  /**
-   * Initializes an {@code ImageClassifier}.
-   *
-   * @param activity
-   */
-  ImageClassifierFloat(Activity activity, String Model) throws IOException {
-    super(activity,Model);
-    labelProbArray = new float[1][getNumLabels()];
-  }
+    /**
+     * Initializes an {@code ImageClassifier}.
+     *
+     * @param activity
+     */
+    ImageClassifierFloat(Activity activity, String Model) throws IOException {
+        super(activity, Model);
+        labelProbArray = new float[1][getNumLabels()];
+    }
 
-  @Override
-  protected String getLabelPath() {
-    return "labels.txt";
-  }
+    @Override
+    protected String getLabelPath() {
+        return "labels.txt";
+    }
 
-  @Override
-  protected int getImageSizeX() {
-    return 224;
-  }
+    @Override
+    protected int getImageSizeX() {
+        return 224;
+    }
 
-  @Override
-  protected int getImageSizeY() {
-    return 224;
-  }
+    @Override
+    protected int getImageSizeY() {
+        return 224;
+    }
 
-  @Override
-  protected int getNumBytesPerChannel() {
-    // a 32bit float value requires 4 bytes
-    return 4;
-  }
+    @Override
+    protected int getNumBytesPerChannel() {
+        // a 32bit float value requires 4 bytes
+        return 4;
+    }
 
-  @Override
-  protected void addPixelValue(int pixelValue) {
-    imgData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-    imgData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-    imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-  }
+    @Override
+    protected void addPixelValue(int pixelValue) {
+        imgData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+        imgData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+        imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+    }
 
-  @Override
-  protected float getProbability(int labelIndex) {
-    return labelProbArray[0][labelIndex];
-  }
+    @Override
+    protected float getProbability(int labelIndex) {
+        return labelProbArray[0][labelIndex];
+    }
 
-  @Override
-  protected void setProbability(int labelIndex, Number value) {
-    labelProbArray[0][labelIndex] = value.floatValue();
-  }
+    @Override
+    protected void setProbability(int labelIndex, Number value) {
+        labelProbArray[0][labelIndex] = value.floatValue();
+    }
 
-  @Override
-  protected float getNormalizedProbability(int labelIndex) {
-    // TODO the following value isn't in [0,1] yet, but may be greater. Why?
-    return getProbability(labelIndex);
-  }
+    @Override
+    protected float getNormalizedProbability(int labelIndex) {
+        // TODO the following value isn't in [0,1] yet, but may be greater. Why?
+        return getProbability(labelIndex);
+    }
 
-  @Override
-  protected void runInference() {
-    tflite.run(imgData, labelProbArray);
-  }
+    @Override
+    protected void runInference() {
+        tflite.run(imgData, labelProbArray);
+    }
 }
