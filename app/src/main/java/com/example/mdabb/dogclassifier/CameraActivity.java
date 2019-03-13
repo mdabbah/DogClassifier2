@@ -54,7 +54,7 @@ public class CameraActivity extends AppCompatActivity {
     private HandlerThread mBackgroundThread;
     private ImageClassifier classifier;
     private boolean buttonState = false;
-    private long avgLat=0;
+    long avgLat=0;
     ImageReader img_reader;
     int frame = 1;
 
