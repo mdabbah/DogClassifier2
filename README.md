@@ -6,6 +6,8 @@ this project uses 5 trained CNN models architictures:
 * inception resnet v2 
 * mobilenet
 * xception
+
+
 With the abillity to select which one to use between them.
 you can read all about it from the following pdf:
 https://1drv.ms/b/s!AqucDGfrSsz7g4IEigMFJFsgaMywBw
